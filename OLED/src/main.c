@@ -30,9 +30,49 @@
  */
 #include <asf.h>
 
+volatile uint32_t g_ul_ms_ticks = 0;
+#define BLINK_PERIOD        1000
+
+void SysTick_Handler(void)
+{
+	g_ul_ms_ticks++;
+	printf("%d\r",g_ul_ms_ticks);
+}
+
+/**
+ * \brief Configure UART console.
+ */
+static void configure_console(void)
+{
+	const usart_serial_options_t uart_serial_options = {
+		.baudrate = CONF_UART_BAUDRATE,
+#ifdef CONF_UART_CHAR_LENGTH
+		.charlength = CONF_UART_CHAR_LENGTH,
+#endif
+		.paritytype = CONF_UART_PARITY,
+#ifdef CONF_UART_STOP_BITS
+		.stopbits = CONF_UART_STOP_BITS,
+#endif
+};
+
+	/* Configure console UART. */
+	stdio_serial_init(CONF_UART, &uart_serial_options);
+}
+
+
 int main (void)
 {
 	board_init();
+	sysclk_init();
+	configure_console();
+	
+	/* Configure systick for 1 ms */
+	puts("Configure system tick to get 1ms tick period.\r");
+	if (SysTick_Config(sysclk_get_cpu_hz() / BLINK_PERIOD)) {
+		puts("-F- Systick configuration error\r");
+		while (1);
+	}
+	
 
 	// Insert application code here, after the board has been initialized.
 
